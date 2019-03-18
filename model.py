@@ -1,18 +1,27 @@
+<<<<<<< HEAD
 import numpy as np
 import os
 import skimage.io as io
 import skimage.transform as trans
 import numpy as np
+=======
+>>>>>>> refs/remotes/origin/master
 from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from keras import backend as keras
 
 
 def unet(pretrained_weights=None, input_size=(256, 256, 1)):
-    inputs = Input(input_size)
-    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
+    assert 3 == len(input_size)
+
+    the_inputs = Input(shape=input_size)
+
+    if 1 != input_size[2]:
+        adjusted_inputs = Conv2D(1, (1, 1))(the_inputs)  # map N channels data to 1 channel
+    else:
+        adjusted_inputs = the_inputs
+
+    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(adjusted_inputs)
     conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
     conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
@@ -52,13 +61,13 @@ def unet(pretrained_weights=None, input_size=(256, 256, 1)):
     conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
 
-    model = Model(inputs=[inputs], outputs=[conv10])
+    model = Model(inputs=[the_inputs], outputs=[conv10])
 
     model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
 
-    # model.summary()
+    model.summary()
 
-    if (pretrained_weights):
+    if pretrained_weights:
         model.load_weights(pretrained_weights)
 
     return model
