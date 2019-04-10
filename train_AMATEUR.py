@@ -1,11 +1,11 @@
 import luccauchon.data.__MYENV__ as E
 import logging
 
-E.APPLICATION_LOG_LEVEL = logging.DEBUG
+E.APPLICATION_LOG_LEVEL = logging.INFO
 
 import os
 
-os.environ['basedir_a'] = '/gpfs/home/cj3272/tmp/'
+os.environ['basedir_a'] = 'F:/Temp2/'
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import keras
@@ -41,23 +41,32 @@ from model import *
 from luccauchon.data.Generators import AmateurDataFrameDataGenerator
 import luccauchon.data.Generators as generators
 
-df_train, df_val = generators.amateur_train_val_split('/gpfs/groups/gc056/APPRANTI/cj3272/dataset/22FEV2019/GEN_segmentation/', class_ids=[1], number_elements=None)
 
-dim_image = (256, 256, 3)
-batch_size = 24
+dim_image = (64, 64, 3)
+batch_size = 32
 model = unet(input_size=dim_image)
+classes_id = [1]
+number_elements = 256
 
-train_generator = AmateurDataFrameDataGenerator(df_train, batch_size=batch_size, dim_image=dim_image)
-val_generator = AmateurDataFrameDataGenerator(df_val, batch_size=batch_size, dim_image=dim_image)
+if number_elements is not None:
+    assert number_elements > batch_size
+df_train, df_val = generators.amateur_train_val_split('F:/AMATEUR/segmentation/22FEV2019/GEN_segmentation/', class_ids=classes_id, number_elements=number_elements)
 
-modelCheckpoint = keras.callbacks.ModelCheckpoint(filepath='unet_amateur_weights.{epoch:02d}-{val_loss:.4f}.hdf5',
+
+train_generator = AmateurDataFrameDataGenerator(df_train, classes_id=classes_id, batch_size=batch_size, dim_image=dim_image)
+val_generator = AmateurDataFrameDataGenerator(df_val, classes_id=classes_id, batch_size=batch_size, dim_image=dim_image)
+
+modelCheckpoint = keras.callbacks.ModelCheckpoint(filepath='F:/Temp2/unet_amateur_weights.{epoch:02d}-{val_loss:.4f}.hdf5',
                                                   monitor='val_loss',
                                                   verbose=0, save_best_only=False, save_weights_only=False,
                                                   mode='auto', period=1)
 reduceLROnPlateau = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=7, verbose=1,
                                                       mode='auto', min_delta=0.001, cooldown=0, min_lr=10e-7)
 
-model.fit_generator(generator=train_generator, steps_per_epoch=None, epochs=30, verbose=2,
-                    callbacks=[reduceLROnPlateau, modelCheckpoint],
-                    validation_data=val_generator, validation_steps=None, class_weight=None, max_queue_size=10,
-                    workers=8, use_multiprocessing=True, shuffle=True, initial_epoch=0)
+assert len(df_train)//batch_size == train_generator.__len__()
+assert len(df_val)//batch_size == val_generator.__len__()
+
+model.fit_generator(generator=train_generator, steps_per_epoch=train_generator.__len__(), epochs=10, verbose=1,
+                    callbacks=[reduceLROnPlateau],#, modelCheckpoint],
+                    validation_data=val_generator, validation_steps=val_generator.__len__(), class_weight=None, max_queue_size=10,
+                    workers=8, use_multiprocessing=False, shuffle=True, initial_epoch=0)
