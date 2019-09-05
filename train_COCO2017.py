@@ -4,9 +4,12 @@ import logging
 E.APPLICATION_LOG_LEVEL = logging.DEBUG
 
 import os
-
-os.environ['basedir_a'] = '/gpfs/home/cj3272/tmp/'
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+if os.name is not 'nt':
+    os.environ['basedir_a'] = '/gpfs/home/cj3272/tmp/'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+else:
+    os.environ['basedir_a'] = 'F:/Temp2/'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 import keras
 import PIL
@@ -42,12 +45,15 @@ from luccauchon.data.Generators import COCODataFrameDataGenerator
 
 
 categories = ['person']#, 'tie']
-data_dir_source_coco = '/gpfs/home/cj3272/56/APPRANTI/cj3272/dataset/coco/'
+if os.name is not 'nt':
+    data_dir_source_coco = '/gpfs/home/cj3272/56/APPRANTI/cj3272/dataset/coco/'
+else:
+    data_dir_source_coco = 'F:/COCO_DATASET/data/coco/'
 dim_image = (256, 256, 3)
 batch_size = 64
 
-train_generator = COCODataFrameDataGenerator(data_dir_source_coco=data_dir_source_coco, categories=categories, batch_size=batch_size, dim_image=dim_image, data_type_source_coco='train2017')
-val_generator = COCODataFrameDataGenerator(data_dir_source_coco=data_dir_source_coco, categories=categories, batch_size=batch_size, dim_image=dim_image, data_type_source_coco='val2017')
+train_generator = COCODataFrameDataGenerator(data_dir_source_coco=data_dir_source_coco, batch_size=batch_size, dim_image=dim_image, data_type_source_coco='train2017')
+val_generator = COCODataFrameDataGenerator(data_dir_source_coco=data_dir_source_coco, batch_size=batch_size, dim_image=dim_image, data_type_source_coco='val2017')
 
 model = unet(input_size=dim_image)
 
